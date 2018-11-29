@@ -94,7 +94,6 @@ final class DecodingBenchmarks: Benchmark {
         printResults(time: result, size: size)
     }
 
-
     // ~1.551 vs. 0.231 for libbson (6.7x)
     func testFlatDecoding() throws {
         try doDecodingTest(file: flatBSONFile, size: flatSize)

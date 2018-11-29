@@ -11,7 +11,7 @@ class Benchmark: XCTestCase {
             XCTFail("Missing resource path")
             return ""
         }
-        
+
         return path + "/data"
     }
 

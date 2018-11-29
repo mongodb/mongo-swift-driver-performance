@@ -130,7 +130,7 @@ final class MultiDocumentBenchmarks: Benchmark {
         return [
             ("testFindManyAndEmptyCursor", testFindManyAndEmptyCursor),
             ("testSmallDocBulkInsert", testSmallDocBulkInsert),
-            ("testLargeDocBulkInsert",  testLargeDocBulkInsert)
+            ("testLargeDocBulkInsert", testLargeDocBulkInsert)
         ]
     }
 
