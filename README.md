@@ -1,6 +1,6 @@
 # Driver performance tests for MongoSwift
 
-This is a Swift implementation of the MongoDB standard driver performance [benchmark suite](https://github.com/mongodb/specifications/blob/master/source/benchmarking/benchmarking.rst). 
+This is a Swift implementation of the MongoDB standard driver performance [benchmark suite](https://github.com/mongodb/specifications/blob/master/source/benchmarking/benchmarking.rst). The implementation works in Swift 4.0+.
 
 The benchmarks can be run from the command line or XCode. 
 
