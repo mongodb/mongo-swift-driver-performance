@@ -1,13 +1,12 @@
-// swift-tools-version:4.0
+// swift-tools-version:5.1
 import PackageDescription
 
 let package = Package(
-	name: "MongoSwift-Performance",
-	dependencies: [
-		.package(url: "https://github.com/mongodb/mongo-swift-driver", from: "0.0.7"),
-		.package(url: "https://github.com/Quick/Nimble.git", from: "7.3.0")
-	],
-	targets: [
-		.testTarget(name: "Benchmarks", dependencies: ["MongoSwift", "Nimble"])
-	]
+    name: "mongo-swift-driver-performance",
+    dependencies: [
+        .package(url: "https://github.com/mongodb/mongo-swift-driver", .upToNextMajor(from: "1.0.0-rc0"))
+    ],
+    targets: [
+        .target(name: "Benchmarks", dependencies: ["MongoSwift", "MongoSwiftSync"])
+    ]
 )

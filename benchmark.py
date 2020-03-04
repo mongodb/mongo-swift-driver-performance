@@ -8,11 +8,11 @@ results = filter(lambda x: "median time" in x, output.split('\n'))
 
 benchmarks = {}
 for r in results:
-	match = re.search(r"\[.*\ (?P<name>.*)]: median time (?P<seconds>.*) seconds, score (?P<score>.*) ", r)
-	name = match.group("name")
-	time = match.group("seconds")
-	score = match.group("score")
-	benchmarks[name] = {"time": float(time), "score": float(score)}
+    match = re.search(r"Results for (?P<name>.*): median time (?P<seconds>.*) seconds, score (?P<score>.*) ", r)
+    name = match.group("name")
+    time = match.group("seconds")
+    score = match.group("score")
+    benchmarks[name] = {"time": float(time), "score": float(score)}
 
 print "\n"
 print benchmarks
