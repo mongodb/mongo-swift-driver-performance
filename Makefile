@@ -1,5 +1,5 @@
 all:
-	swift run -c release | python benchmark.py
+	swift run -c release
 
 lint:
 	swiftlint autocorrect

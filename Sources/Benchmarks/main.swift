@@ -1,3 +1,3 @@
-//try benchmarkBSONEncoding()
-//try benchmarkBSONDecoding()
+try benchmarkBSONEncoding()
+try benchmarkBSONDecoding()
 try benchmarkIO()

@@ -101,8 +101,8 @@ func runBulkInsertBenchmarks(using db: MongoDatabase) throws {
 }
 
 let ioBenchmarks: [(MongoDatabase) throws -> Void] = [
-    // runCommandBenchmark,
-    // runFindOneByIdBenchmark,
+    runCommandBenchmark,
+    runFindOneByIdBenchmark,
     runInsertOneBenchmarks,
     runFindManyAndEmptyCursorBenchmark,
     runBulkInsertBenchmarks
