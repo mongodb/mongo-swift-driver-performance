@@ -4,4 +4,4 @@ This is a Swift implementation of the MongoDB standard driver performance [bench
 
 The benchmarks should be run via the command line in release mode for optimal results: `swift run -c release`.
 
-Please note that each benchmark test runs for a minimum of 1 minute and therefore **the entire benchmark suite will take around 20-30 minutes to complete**.
+Please note that each benchmark test runs for anywhere from 1 to 5 minutes and therefore **the entire benchmark suite will take around 20-30 minutes to complete**.

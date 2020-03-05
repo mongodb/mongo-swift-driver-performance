@@ -26,9 +26,19 @@ func measureTime(_ operation: () throws -> Void) throws -> Double {
 }
 
 /// Measure the median time for `iterations` executions of the provided closure.
-func measureOp(iterations: Int = 100, operation: () throws -> Void) throws -> Double {
-    let results = try (1...iterations).map { _ in
-        try measureTime(operation)
+func measureOp(operation: () throws -> Void) throws -> Double {
+    var results = [Double]()
+    var iterations = 0
+    var totalTime = 0.0
+
+    // Iterations should loop for at least 1 minute cumulative execution time.
+    // Iterations should stop after 100 iterations or 5 minutes cumulative execution time,
+    // whichever is shorter.
+    while totalTime < 60.0 || (iterations < 100 && totalTime < 300.0) {
+        let measurement = try measureTime(operation)
+        results.append(measurement)
+        iterations += 1
+        totalTime += measurement
     }
     return median(results)
 }
