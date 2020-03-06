@@ -2,12 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "MongoSwift",
+        "package": "mongo-swift-driver",
         "repositoryURL": "https://github.com/mongodb/mongo-swift-driver",
         "state": {
           "branch": null,
-          "revision": "90c15c814968eba76e4dcc3146bf4b7fbe8d8cb1",
-          "version": "0.0.7"
+          "revision": "81cd04b6e08cf9a3a1ef0435b996f5bc68fb1f7c",
+          "version": "1.0.0-rc0"
         }
       },
       {
@@ -15,26 +15,17 @@
         "repositoryURL": "https://github.com/Quick/Nimble.git",
         "state": {
           "branch": null,
-          "revision": "cd6dfb86f496fcd96ce0bc6da962cd936bf41903",
-          "version": "7.3.1"
+          "revision": "f8657642dfdec9973efc79cc68bcef43a653a2bc",
+          "version": "8.0.2"
         }
       },
       {
-        "package": "bson",
-        "repositoryURL": "https://github.com/mongodb/swift-bson",
+        "package": "swift-nio",
+        "repositoryURL": "https://github.com/apple/swift-nio",
         "state": {
           "branch": null,
-          "revision": "87b458f55ba66f20305341d9d138e47dbcc92da7",
-          "version": "2.0.0"
-        }
-      },
-      {
-        "package": "mongoc",
-        "repositoryURL": "https://github.com/mongodb/swift-mongoc",
-        "state": {
-          "branch": null,
-          "revision": "e503b50210dae2cf0220474c2f12087830150e9f",
-          "version": "2.0.0"
+          "revision": "16ab4d657e1ad4e77bd5f8b94af8538561643053",
+          "version": "2.14.0"
         }
       }
     ]
