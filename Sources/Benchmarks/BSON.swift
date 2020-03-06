@@ -111,7 +111,7 @@ func benchmarkBSON() throws {
             try runNativeToBSONBenchmark(file),
             try runBSONToJSONBenchmark(file),
             try runBSONToNativeBenchmark(file)
-         ]
+        ]
     }.reduce([], +)
     print("BSONBench score: \(average(allResults))")
 }
