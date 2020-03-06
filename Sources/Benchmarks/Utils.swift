@@ -18,16 +18,16 @@ struct TestFile {
 }
 
 /// Measure the time for a single execution of the provided closure.
-func measureTime(_ operation: () throws -> Void) throws -> Double {
+func measureTime(_ operation: () throws -> Void) throws -> TimeInterval {
     let startTime = ProcessInfo.processInfo.systemUptime
     try operation()
     let timeElapsed = ProcessInfo.processInfo.systemUptime - startTime
-    return Double(timeElapsed)
+    return timeElapsed
 }
 
 /// Measure the median time for `iterations` executions of the provided closure.
-func measureOp(operation: () throws -> Void) throws -> Double {
-    var results = [Double]()
+func measureOp(operation: () throws -> Void) throws -> TimeInterval {
+    var results = [TimeInterval]()
     var iterations = 0
     var totalTime = 0.0
 
@@ -48,8 +48,14 @@ func median<T: Comparable>(_ input: [T]) -> T {
     input.sorted(by: <)[input.count / 2]
 }
 
-func printResults(name: String, time: Double, size: Double) {
-    let roundedTime = Double(floor(time * 1000) / 1000)
-    let roundedScore = Double(floor(size / time * 10000) / 10000)
+func average(_ input: [Double]) -> Double {
+    input.reduce(0, +) / Double(input.count)
+}
+
+/// Calculates the median time and score for a benchmark. Prints the results, and returns the score.
+func calculateAndPrintResults(name: String, time: TimeInterval, size: Double) -> Double {
+    let roundedTime = floor(time * 1000) / 1000
+    let roundedScore = floor(size / time * 10000) / 10000
     print("Results for \(name): median time \(roundedTime) seconds, score \(roundedScore) MB/s")
+    return roundedScore
 }

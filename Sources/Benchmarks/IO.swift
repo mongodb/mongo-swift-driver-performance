@@ -8,7 +8,7 @@ let largeFile = TestFile(name: "large_doc", size: 27.31)
 // Size in MB of {"isMaster": true}.
 let runCommandSize = 0.16
 
-func runCommandBenchmark(using db: MongoDatabase) throws {
+func runCommandBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking runCommand")
 
     let command: Document = ["isMaster": true]
@@ -17,10 +17,10 @@ func runCommandBenchmark(using db: MongoDatabase) throws {
             _ = try db.runCommand(command)
         }
     }
-    printResults(name: "runCommand", time: results, size: runCommandSize)
+    return calculateAndPrintResults(name: "runCommand", time: results, size: runCommandSize)
 }
 
-func runFindOneByIdBenchmark(using db: MongoDatabase) throws {
+func runFindOneByIdBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking findOne by _id")
 
     let collection = db.collection("perftest")
@@ -40,11 +40,11 @@ func runFindOneByIdBenchmark(using db: MongoDatabase) throws {
             _ = try collection.findOne(query)
         }
     }
-    printResults(name: "findOneById", time: results, size: tweetFile.size)
+    return calculateAndPrintResults(name: "findOneById", time: results, size: tweetFile.size)
 }
 
 /// Runs a single insertOne benchmark with the given file using the given DB.
-func runInsertOneBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws {
+func runInsertOneBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws -> Double {
     print("Benchmarking \(file.name) insertOne")
 
     try db.drop()
@@ -56,35 +56,34 @@ func runInsertOneBenchmark(using db: MongoDatabase, file: TestFile, copies: Int)
             try collection.insertOne(document)
         }
     }
-    printResults(name: "\(file.name) insertOne", time: results, size: file.size)
+    return calculateAndPrintResults(name: "\(file.name) insertOne", time: results, size: file.size)
 }
 
-/// Runs all insertOne benchmarks.
-func runInsertOneBenchmarks(using db: MongoDatabase) throws {
+func runSmallInsertOneBenchmark(using db: MongoDatabase) throws -> Double {
     try runInsertOneBenchmark(using: db, file: smallFile, copies: 10000)
+}
+
+func runLargeInsertOneBenchmark(using db: MongoDatabase) throws -> Double {
     try runInsertOneBenchmark(using: db, file: largeFile, copies: 10)
 }
 
-func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws {
+func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking find() and empty cursor")
 
     let document = try Document(fromJSON: tweetFile.json)
     let collection = db.collection("corpus")
-    for _ in 1...10000 {
-        try collection.insertOne(document)
-    }
+    try collection.insertMany((1...10000).map { _ in document })
 
     let results = try measureOp {
         let cursor = try collection.find()
         _ = Array(cursor)
     }
-    printResults(name: "findManyAndEmptyCursor", time: results, size: tweetFile.size)
+    return calculateAndPrintResults(name: "findManyAndEmptyCursor", time: results, size: tweetFile.size)
 }
 
-func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws {
+func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws -> Double {
     print("Benchmarking \(file.name) bulk insert")
 
-    try db.drop()
     let collection = try db.createCollection("corpus")
     let document = try Document(fromJSON: file.json)
     let toInsert = (1...copies).map { _ in document }
@@ -92,28 +91,65 @@ func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int
     let results = try measureOp {
         try collection.insertMany(toInsert)
     }
-    printResults(name: "\(file.name) bulk insert", time: results, size: file.size)
+    return calculateAndPrintResults(name: "\(file.name) bulk insert", time: results, size: file.size)
 }
 
-func runBulkInsertBenchmarks(using db: MongoDatabase) throws {
+func runSmallBulkInsertBenchmark(using db: MongoDatabase) throws -> Double {
     try runBulkInsertBenchmark(using: db, file: smallFile, copies: 10000)
+}
+
+func runLargeBulkInsertBenchmark(using db: MongoDatabase) throws -> Double {
     try runBulkInsertBenchmark(using: db, file: largeFile, copies: 10)
 }
 
-let ioBenchmarks: [(MongoDatabase) throws -> Void] = [
+let ioBenchmarks: [(MongoDatabase) throws -> Double] = [
     runCommandBenchmark,
     runFindOneByIdBenchmark,
-    runInsertOneBenchmarks,
+    runSmallInsertOneBenchmark,
+    runLargeInsertOneBenchmark,
     runFindManyAndEmptyCursorBenchmark,
-    runBulkInsertBenchmarks
+    runSmallBulkInsertBenchmark,
+    runLargeBulkInsertBenchmark
 ]
+
+let multiDocBenchmarks: [(MongoDatabase) throws -> Double] = [
+    runFindManyAndEmptyCursorBenchmark,
+    runSmallBulkInsertBenchmark,
+    runLargeBulkInsertBenchmark
+]
+
+func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) throws -> Double) throws -> Double {
+    try db.drop()
+    return try body(db)
+}
 
 func benchmarkIO() throws {
     let db = try MongoClient().db("perftest")
-    try db.drop()
-    for benchmark in ioBenchmarks {
-        try db.drop()
-        try benchmark(db)
-        try db.drop()
-    }
+
+    // this benchmark isn't factored into any composite scores.
+    _ = try withDBCleanup(db: db, body: runCommandBenchmark)
+
+    let findOne = try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
+    let smallInsertOne = try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
+    let largeInsertOne = try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
+    let findMany = try withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
+    let smallBulk = try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
+    let largeBulk = try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
+
+    let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
+    print("SingleBench score: \(singleBenchResult)")
+
+    let multiBenchResult = average([findMany, smallBulk, largeBulk])
+    print("MultiBench score: \(multiBenchResult)")
+
+    // todo: add gridfs and parallel results
+    let readBenchResult = average([findOne, findMany])
+    print("ReadBench score: \(readBenchResult))")
+
+    // todo: add gridfs and parallel results
+    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk])
+    print("WriteBench score: \(writeBenchResult)")
+
+    let driverBenchResult = average([readBenchResult, writeBenchResult])
+    print("DriverBench score: \(driverBenchResult)")
 }

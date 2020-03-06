@@ -53,7 +53,7 @@ let bsonTestFiles = [
 /// This is the "C driver version" of the BSON encoding benchmarks.
 /// The caller should specify a number of iterations that satisfies the spec requirements for how long this benchmark
 /// should run for.
-func runJSONToBSONBenchmark(_ file: TestFile) throws {
+func runJSONToBSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) JSON to BSON")
     let json = file.json
     let results = try measureOp {
@@ -61,12 +61,12 @@ func runJSONToBSONBenchmark(_ file: TestFile) throws {
             _ = try Document(fromJSON: json)
         }
     }
-    printResults(name: "\(file.name) JSON to BSON", time: results, size: file.size)
+    return calculateAndPrintResults(name: "\(file.name) JSON to BSON", time: results, size: file.size)
 }
 
 /// Runs a benchmark that tests how long it takes to encode native Swift data types corresponding to the provided JSON
 /// file into BSON. This is the non-"C driver version" of the BSON encoding benchmarks.
-func runNativeToBSONBenchmark(_ file: TestFile) throws {
+func runNativeToBSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) native to BSON")
     let document = try Document(fromJSON: file.json)
     let docAsArray = document.toArray()
@@ -75,12 +75,12 @@ func runNativeToBSONBenchmark(_ file: TestFile) throws {
             _ = Document(fromArray: docAsArray)
         }
     }
-    printResults(name: "\(file.name) native to BSON", time: results, size: file.size)
+    return calculateAndPrintResults(name: "\(file.name) native to BSON", time: results, size: file.size)
 }
 
 /// Runs a benchmark that tests how long it takes to convert BSON data corresponding to the JSON in the provided file
 /// back to JSON. This is the "C driver version" of the BSON decoding benchmarks.
-func runBSONToJSONBenchmark(_ file: TestFile) throws {
+func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) BSON to JSON")
     let document = try Document(fromJSON: file.json)
     let results = try measureOp {
@@ -88,12 +88,12 @@ func runBSONToJSONBenchmark(_ file: TestFile) throws {
             _ = document.canonicalExtendedJSON
         }
     }
-    printResults(name: "\(file.name) BSON to JSON", time: results, size: file.size)
+    return calculateAndPrintResults(name: "\(file.name) BSON to JSON", time: results, size: file.size)
 }
 
 /// Runs a benchmark that tests how long it takes to decode BSON corresponding to the provided JSON file into
 /// equivalent Swift data types. This is the non-"C driver version" of the BSON decoding benchmarks.
-func runBSONToNativeBenchmark(_ file: TestFile) throws {
+func runBSONToNativeBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) BSON to native")
     let document = try Document(fromJSON: file.json)
     let results = try measureOp {
@@ -101,19 +101,17 @@ func runBSONToNativeBenchmark(_ file: TestFile) throws {
             _ = document.toArray()
         }
     }
-    printResults(name: "\(file.name) BSON to native", time: results, size: file.size)
+    return calculateAndPrintResults(name: "\(file.name) BSON to native", time: results, size: file.size)
 }
 
-func benchmarkBSONEncoding() throws {
-    try bsonTestFiles.forEach { file in
-        try runJSONToBSONBenchmark(file)
-        try runNativeToBSONBenchmark(file)
-    }
-}
-
-func benchmarkBSONDecoding() throws {
-    try bsonTestFiles.forEach { file in
-        try runBSONToJSONBenchmark(file)
-        try runBSONToNativeBenchmark(file)
-    }
+func benchmarkBSON() throws {
+    let allResults = try bsonTestFiles.map { file in
+        [
+            try runJSONToBSONBenchmark(file),
+            try runNativeToBSONBenchmark(file),
+            try runBSONToJSONBenchmark(file),
+            try runBSONToNativeBenchmark(file)
+         ]
+    }.reduce([], +)
+    print("BSONBench score: \(average(allResults))")
 }
