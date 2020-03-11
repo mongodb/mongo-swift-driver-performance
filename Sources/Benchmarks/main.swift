@@ -1,3 +1,2 @@
-try benchmarkBSONEncoding()
-try benchmarkBSONDecoding()
+try benchmarkBSON()
 try benchmarkIO()
