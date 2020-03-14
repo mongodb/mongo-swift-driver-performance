@@ -1,2 +1,4 @@
-try benchmarkBSON()
-try benchmarkIO()
+// try benchmarkBSON()
+// try benchmarkIO()
+
+try runJSONImportBenchmark()
