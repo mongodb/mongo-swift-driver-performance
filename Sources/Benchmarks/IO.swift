@@ -157,11 +157,15 @@ func benchmarkIO() throws {
 
     // TODO: add gridfs results
     let readBenchResult = average([findOne, findMany, multiExport])
-    print("ReadBench score: \(readBenchResult))")
+    print("ReadBench score: \(readBenchResult)")
 
     // TODO: add gridfs results
     let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
     print("WriteBench score: \(writeBenchResult)")
+
+    // TODO: add gridfs results
+    let parallelBenchResult = average([multiImport, multiExport])
+    print("ParallelBench score: \(parallelBenchResult)")
 
     let driverBenchResult = average([readBenchResult, writeBenchResult])
     print("DriverBench score: \(driverBenchResult)")

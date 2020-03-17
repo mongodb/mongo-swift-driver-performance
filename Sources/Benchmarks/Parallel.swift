@@ -28,7 +28,17 @@ let ldJSONSize = 565.0
 // Shared allocator to use throughout the benchmarks.
 let allocator = ByteBufferAllocator()
 
-/// Imports all LDJSON files to the specified collection.
+ /**
+ * Imports all LDJSON files to the specified collection. This works by firing off 1 chained async call for each file
+ * and combining their results into a single future. Each chained call works by:
+ * 1. Reading in the entire contents of the file using `NonBlockingFileIO`.
+ * 2. Converting the resulting bytes into documents.
+ * 3. Bulk inserting the documents into the collection.
+ *
+ * The work will be spread over across the event loops in the provided group.
+ * If addFileIds is true (useful for splitting up work in the export benchmark), the id of the source file is added to
+ * each document that is insered.
+ */
 func importAllFiles(
     to collection: MongoCollection<Document>,
     eventLoopGroup: EventLoopGroup,
@@ -49,8 +59,6 @@ func importAllFiles(
     )
 }
 
-/// Imports the LDJSON file with the specified id to the specified collection. If addFileId is true, appends the file
-/// ID to each inserted document under the key "fileId".
 func importJSONFile(
     id: Int32,
     to collection: MongoCollection<Document>,
@@ -89,7 +97,15 @@ func importJSONFile(
     }
 }
 
-/// Exports the collection to a set of LDJSON files.
+ /**
+ * Exports the specified collection to a set of LDJSON files. This works by firing off 1 chained async call for each
+ * file and combining their results into a single future. Each chained call works by:
+ * 1. Creating a cursor over documents in the collection with the specified file id.
+ * 2. Writing all of the JSON data for the file into a ByteBuffer.
+ * 3. Using `NonBlockingFileIO` to write the contents of the `ByteBuffer` to to disk.
+ *
+ * The work will be spread over across the event loops in the provided group.
+ */
 func exportCollection(
     _ collection: MongoCollection<Document>,
     eventLoopGroup: EventLoopGroup,
@@ -108,7 +124,6 @@ func exportCollection(
     )
 }
 
-/// Exports all documents from the collection with the specified file id to a corresponding file.
 func exportJSONFile(
     id: Int32,
     from collection: MongoCollection<Document>,
@@ -172,7 +187,7 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
             try? FileManager.default.removeItem(atPath: outputPath)
             try FileManager.default.createDirectory(atPath: outputPath, withIntermediateDirectories: false)
             (0...99).forEach { id in
-                _ = FileManager.default.createFile(atPath: "\(outputPath)/ldjson\(paddedId(Int32(id))).txt", contents: nil)
+                _ = FileManager.default.createFile(atPath: getOutputFilePath(forId: Int32(id)), contents: nil)
             }
         },
         task: {
