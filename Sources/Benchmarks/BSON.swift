@@ -56,7 +56,7 @@ let bsonTestFiles = [
 func runJSONToBSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) JSON to BSON")
     let json = file.json
-    let results = try measureOp {
+    let results = try measureTask {
         for _ in 1...10000 {
             _ = try Document(fromJSON: json)
         }
@@ -70,7 +70,7 @@ func runNativeToBSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) native to BSON")
     let document = try Document(fromJSON: file.json)
     let docAsArray = document.toArray()
-    let results = try measureOp {
+    let results = try measureTask {
         for _ in 1...10000 {
             _ = Document(fromArray: docAsArray)
         }
@@ -83,7 +83,7 @@ func runNativeToBSONBenchmark(_ file: TestFile) throws -> Double {
 func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) BSON to JSON")
     let document = try Document(fromJSON: file.json)
-    let results = try measureOp {
+    let results = try measureTask {
         for _ in 1...10000 {
             _ = document.canonicalExtendedJSON
         }
@@ -96,7 +96,7 @@ func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
 func runBSONToNativeBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) BSON to native")
     let document = try Document(fromJSON: file.json)
-    let results = try measureOp {
+    let results = try measureTask {
         for _ in 1...10000 {
             _ = document.toArray()
         }

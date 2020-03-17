@@ -12,7 +12,7 @@ func runCommandBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking runCommand")
 
     let command: Document = ["isMaster": true]
-    let results = try measureOp {
+    let results = try measureTask {
         for _ in 1...10000 {
             _ = try db.runCommand(command)
         }
@@ -35,7 +35,7 @@ func runFindOneByIdBenchmark(using db: MongoDatabase) throws -> Double {
     // Pre-create queries in order to not include the time spent encoding in results.
     let queries: [Document] = ids.map { ["_id": $0] }
 
-    let results = try measureOp {
+    let results = try measureTask {
         for query in queries {
             _ = try collection.findOne(query)
         }
@@ -48,14 +48,20 @@ func runInsertOneBenchmark(using db: MongoDatabase, file: TestFile, copies: Int)
     print("Benchmarking \(file.name) insertOne")
 
     try db.drop()
-    let collection = try db.createCollection("corpus")
+    let collection = db.collection("corpus")
     let document = try Document(fromJSON: file.json)
 
-    let results = try measureOp {
-        for _ in 1...copies {
-            try collection.insertOne(document)
+    let results = try measureTask(
+        before: {
+            try db.drop()
+            _ = try db.createCollection("corpus")
+        },
+        task: {
+            for _ in 1...copies {
+                try collection.insertOne(document)
+            }
         }
-    }
+    )
     return calculateAndPrintResults(name: "\(file.name) insertOne", time: results, size: file.size)
 }
 
@@ -74,7 +80,7 @@ func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Doubl
     let collection = db.collection("corpus")
     try collection.insertMany((1...10000).map { _ in document })
 
-    let results = try measureOp {
+    let results = try measureTask {
         let cursor = try collection.find()
         _ = Array(cursor)
     }
@@ -84,13 +90,19 @@ func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Doubl
 func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws -> Double {
     print("Benchmarking \(file.name) bulk insert")
 
-    let collection = try db.createCollection("corpus")
+    let collection = db.collection("corpus")
     let document = try Document(fromJSON: file.json)
     let toInsert = (1...copies).map { _ in document }
 
-    let results = try measureOp {
-        try collection.insertMany(toInsert)
-    }
+    let results = try measureTask(
+        before: {
+            try db.drop()
+            _ = try db.createCollection("corpus")
+        },
+        task: {
+            try collection.insertMany(toInsert)
+        }
+    )
     return calculateAndPrintResults(name: "\(file.name) bulk insert", time: results, size: file.size)
 }
 
@@ -135,6 +147,7 @@ func benchmarkIO() throws {
     let findMany = try withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
     let smallBulk = try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
     let largeBulk = try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
+    let (multiImport, multiExport) = try runMultiJSONBenchmarks()
 
     let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
     print("SingleBench score: \(singleBenchResult)")
@@ -142,12 +155,12 @@ func benchmarkIO() throws {
     let multiBenchResult = average([findMany, smallBulk, largeBulk])
     print("MultiBench score: \(multiBenchResult)")
 
-    // todo: add gridfs and parallel results
-    let readBenchResult = average([findOne, findMany])
+    // TODO: add gridfs results
+    let readBenchResult = average([findOne, findMany, multiExport])
     print("ReadBench score: \(readBenchResult))")
 
-    // todo: add gridfs and parallel results
-    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk])
+    // TODO: add gridfs results
+    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
     print("WriteBench score: \(writeBenchResult)")
 
     let driverBenchResult = average([readBenchResult, writeBenchResult])
