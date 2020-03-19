@@ -18,15 +18,16 @@ struct TestFile {
 }
 
 /// Measure the time for a single execution of the provided closure.
-func measureTime(_ operation: () throws -> Void) throws -> TimeInterval {
+func measureTime(_ task: () throws -> Void) throws -> TimeInterval {
     let startTime = ProcessInfo.processInfo.systemUptime
-    try operation()
+    try task()
     let timeElapsed = ProcessInfo.processInfo.systemUptime - startTime
     return timeElapsed
 }
 
-/// Measure the median time for `iterations` executions of the provided closure.
-func measureOp(operation: () throws -> Void) throws -> TimeInterval {
+/// Measure the median time for executing the provided operation. If `setup` is provided, it will be run before each
+/// measurement is taken.
+func measureTask(before: () throws -> Void = {}, task: () throws -> Void) throws -> TimeInterval {
     var results = [TimeInterval]()
     var iterations = 0
     var totalTime = 0.0
@@ -35,7 +36,8 @@ func measureOp(operation: () throws -> Void) throws -> TimeInterval {
     // Iterations should stop after 100 iterations or 5 minutes cumulative execution time,
     // whichever is shorter.
     while totalTime < 60.0 || (iterations < 100 && totalTime < 300.0) {
-        let measurement = try measureTime(operation)
+        try before()
+        let measurement = try measureTime(task)
         results.append(measurement)
         iterations += 1
         totalTime += measurement
@@ -48,11 +50,12 @@ func median<T: Comparable>(_ input: [T]) -> T {
     input.sorted(by: <)[input.count / 2]
 }
 
+/// Calculates the average value of an array of doubles.
 func average(_ input: [Double]) -> Double {
     input.reduce(0, +) / Double(input.count)
 }
 
-/// Calculates the median time and score for a benchmark. Prints the results, and returns the score.
+/// Calculates and prints the score for a benchmark.
 func calculateAndPrintResults(name: String, time: TimeInterval, size: Double) -> Double {
     let roundedTime = floor(time * 1000) / 1000
     let roundedScore = floor(size / time * 10000) / 10000
