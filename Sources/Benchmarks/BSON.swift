@@ -12,14 +12,14 @@ enum SwiftBSON {
 }
 
 /// Extension of Document to allow conversion to and from arrays.
-extension Document {
+extension BSONDocument {
     internal init(fromArray array: [DocElem]) {
         self.init()
 
         for elem in array {
             switch elem.value {
             case let .document(els):
-                self[elem.key] = .document(Document(fromArray: els))
+                self[elem.key] = .document(BSONDocument(fromArray: els))
             case let .other(b):
                 self[elem.key] = b
             }
@@ -58,7 +58,7 @@ func runJSONToBSONBenchmark(_ file: TestFile) throws -> Double {
     let json = file.json
     let results = try measureTask {
         for _ in 1...10000 {
-            _ = try Document(fromJSON: json)
+            _ = try BSONDocument(fromJSON: json)
         }
     }
     return calculateAndPrintResults(name: "\(file.name) JSON to BSON", time: results, size: file.size)
@@ -68,11 +68,11 @@ func runJSONToBSONBenchmark(_ file: TestFile) throws -> Double {
 /// file into BSON. This is the non-"C driver version" of the BSON encoding benchmarks.
 func runNativeToBSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) native to BSON")
-    let document = try Document(fromJSON: file.json)
+    let document = try BSONDocument(fromJSON: file.json)
     let docAsArray = document.toArray()
     let results = try measureTask {
         for _ in 1...10000 {
-            _ = Document(fromArray: docAsArray)
+            _ = BSONDocument(fromArray: docAsArray)
         }
     }
     return calculateAndPrintResults(name: "\(file.name) native to BSON", time: results, size: file.size)
@@ -82,10 +82,10 @@ func runNativeToBSONBenchmark(_ file: TestFile) throws -> Double {
 /// back to JSON. This is the "C driver version" of the BSON decoding benchmarks.
 func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) BSON to JSON")
-    let document = try Document(fromJSON: file.json)
+    let document = try BSONDocument(fromJSON: file.json)
     let results = try measureTask {
         for _ in 1...10000 {
-            _ = document.canonicalExtendedJSON
+            _ = document.toCanonicalExtendedJSONString()
         }
     }
     return calculateAndPrintResults(name: "\(file.name) BSON to JSON", time: results, size: file.size)
@@ -95,7 +95,7 @@ func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
 /// equivalent Swift data types. This is the non-"C driver version" of the BSON decoding benchmarks.
 func runBSONToNativeBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name) BSON to native")
-    let document = try Document(fromJSON: file.json)
+    let document = try BSONDocument(fromJSON: file.json)
     let results = try measureTask {
         for _ in 1...10000 {
             _ = document.toArray()

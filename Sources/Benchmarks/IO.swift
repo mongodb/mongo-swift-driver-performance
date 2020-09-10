@@ -11,7 +11,7 @@ let runCommandSize = 0.16
 func runCommandBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking runCommand")
 
-    let command: Document = ["isMaster": true]
+    let command: BSONDocument = ["isMaster": true]
     let results = try measureTask {
         for _ in 1...10000 {
             _ = try db.runCommand(command)
@@ -24,7 +24,7 @@ func runFindOneByIdBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking findOne by _id")
 
     let collection = db.collection("perftest")
-    var doc = try Document(fromJSON: tweetFile.json)
+    var doc = try BSONDocument(fromJSON: tweetFile.json)
 
     let ids = (1...10000).map { BSON.int32(Int32($0)) }
 
@@ -33,7 +33,7 @@ func runFindOneByIdBenchmark(using db: MongoDatabase) throws -> Double {
         try collection.insertOne(doc)
     }
     // Pre-create queries in order to not include the time spent encoding in results.
-    let queries: [Document] = ids.map { ["_id": $0] }
+    let queries: [BSONDocument] = ids.map { ["_id": $0] }
 
     let results = try measureTask {
         for query in queries {
@@ -49,7 +49,7 @@ func runInsertOneBenchmark(using db: MongoDatabase, file: TestFile, copies: Int)
 
     try db.drop()
     let collection = db.collection("corpus")
-    let document = try Document(fromJSON: file.json)
+    let document = try BSONDocument(fromJSON: file.json)
 
     let results = try measureTask(
         before: {
@@ -76,7 +76,7 @@ func runLargeInsertOneBenchmark(using db: MongoDatabase) throws -> Double {
 func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking find() and empty cursor")
 
-    let document = try Document(fromJSON: tweetFile.json)
+    let document = try BSONDocument(fromJSON: tweetFile.json)
     let collection = db.collection("corpus")
     try collection.insertMany((1...10000).map { _ in document })
 
@@ -91,7 +91,7 @@ func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int
     print("Benchmarking \(file.name) bulk insert")
 
     let collection = db.collection("corpus")
-    let document = try Document(fromJSON: file.json)
+    let document = try BSONDocument(fromJSON: file.json)
     let toInsert = (1...copies).map { _ in document }
 
     let results = try measureTask(

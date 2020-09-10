@@ -40,7 +40,7 @@ let allocator = ByteBufferAllocator()
  * each document that is insered.
  */
 func importAllFiles(
-    to collection: MongoCollection<Document>,
+    to collection: MongoCollection<BSONDocument>,
     eventLoopGroup: EventLoopGroup,
     ioHandler: NonBlockingFileIO,
     addFileIds: Bool = false
@@ -61,7 +61,7 @@ func importAllFiles(
 
 func importJSONFile(
     id: Int32,
-    to collection: MongoCollection<Document>,
+    to collection: MongoCollection<BSONDocument>,
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO,
     addFileId: Bool
@@ -76,9 +76,9 @@ func importJSONFile(
             // these swiftlint disables are ok because we know the data is well-formed.
             let docs = buffer.readBytes(length: fileLength)! // swiftlint:disable:this force_unwrapping
                 .split(separator: 10) // 10 is byte code for "\n"
-                .map { try! Document(fromJSON: Data($0)) } // swiftlint:disable:this force_try
+                .map { try! BSONDocument(fromJSON: Data($0)) } // swiftlint:disable:this force_try
             if addFileId {
-                let docsWithIds: [Document] = docs.map { doc in
+                let docsWithIds: [BSONDocument] = docs.map { doc in
                     var copy = doc
                     copy["fileId"] = .int32(id)
                     return copy
@@ -107,7 +107,7 @@ func importJSONFile(
  * The work will be spread over across the event loops in the provided group.
  */
 func exportCollection(
-    _ collection: MongoCollection<Document>,
+    _ collection: MongoCollection<BSONDocument>,
     eventLoopGroup: EventLoopGroup,
     ioHandler: NonBlockingFileIO
 ) throws -> EventLoopFuture<Void> {
@@ -126,7 +126,7 @@ func exportCollection(
 
 func exportJSONFile(
     id: Int32,
-    from collection: MongoCollection<Document>,
+    from collection: MongoCollection<BSONDocument>,
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO
 ) throws -> EventLoopFuture<Void> {
@@ -134,9 +134,9 @@ func exportJSONFile(
     let write: EventLoopFuture<Void> = collection.find(["fileId": .int32(id)], options: FindOptions(batchSize: 5000))
         .flatMap { $0.toArray() }
         .flatMap { docs in
-            var buffer = allocator.buffer(capacity: docs[0].extendedJSON.utf8.count * 5000)
+            var buffer = allocator.buffer(capacity: docs[0].toExtendedJSONString().utf8.count * 5000)
             docs.forEach { doc in
-                _ = buffer.writeString(doc.extendedJSON + "\n")
+                _ = buffer.writeString(doc.toExtendedJSONString() + "\n")
             }
             return ioHandler.write(fileHandle: handle, buffer: buffer, eventLoop: eventLoop)
         }
@@ -153,7 +153,7 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
     let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
     let client = try MongoClient(using: elg)
     defer {
-        client.syncShutdown()
+        try? client.syncClose()
     }
     let db = client.db("perftest")
     let coll = db.collection("corpus")
