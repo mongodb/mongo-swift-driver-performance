@@ -5,21 +5,6 @@ let tweetFile = TestFile(name: "tweet", size: 16.22)
 let smallFile = TestFile(name: "small_doc", size: 2.75)
 let largeFile = TestFile(name: "large_doc", size: 27.31)
 
-// Size in MB of {"isMaster": true}.
-let runCommandSize = 0.16
-
-func runCommandBenchmark(using db: MongoDatabase) throws -> Double {
-    print("Benchmarking runCommand")
-
-    let command: BSONDocument = ["isMaster": true]
-    let results = try measureTask {
-        for _ in 1...10000 {
-            _ = try db.runCommand(command)
-        }
-    }
-    return calculateAndPrintResults(name: "runCommand", time: results, size: runCommandSize)
-}
-
 func runFindOneByIdBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking findOne by _id")
 
@@ -73,10 +58,10 @@ func runLargeInsertOneBenchmark(using db: MongoDatabase) throws -> Double {
     try runInsertOneBenchmark(using: db, file: largeFile, copies: 10)
 }
 
-func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Double {
-    print("Benchmarking find() and empty cursor")
+func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase, file: TestFile) throws -> Double {
+    print("Benchmarking \(file.name) find() and empty cursor")
 
-    let document = try BSONDocument(fromJSON: tweetFile.json)
+    let document = try BSONDocument(fromJSON: file.json)
     let collection = db.collection("corpus")
     try collection.insertMany((1...10000).map { _ in document })
 
@@ -85,6 +70,14 @@ func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Doubl
         _ = Array(cursor)
     }
     return calculateAndPrintResults(name: "findManyAndEmptyCursor", time: results, size: tweetFile.size)
+}
+
+func runSmallFindManyBenchmark(using db: MongoDatabase) throws -> Double {
+    try runFindManyAndEmptyCursorBenchmark(using: db, file: smallFile)
+}
+
+func runLargeFindManyBenchmark(using db: MongoDatabase) throws -> Double {
+    try runFindManyAndEmptyCursorBenchmark(using: db, file: largeFile)
 }
 
 func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws -> Double {
@@ -114,22 +107,7 @@ func runLargeBulkInsertBenchmark(using db: MongoDatabase) throws -> Double {
     try runBulkInsertBenchmark(using: db, file: largeFile, copies: 10)
 }
 
-let ioBenchmarks: [(MongoDatabase) throws -> Double] = [
-    runCommandBenchmark,
-    runFindOneByIdBenchmark,
-    runSmallInsertOneBenchmark,
-    runLargeInsertOneBenchmark,
-    runFindManyAndEmptyCursorBenchmark,
-    runSmallBulkInsertBenchmark,
-    runLargeBulkInsertBenchmark
-]
-
-let multiDocBenchmarks: [(MongoDatabase) throws -> Double] = [
-    runFindManyAndEmptyCursorBenchmark,
-    runSmallBulkInsertBenchmark,
-    runLargeBulkInsertBenchmark
-]
-
+@discardableResult
 func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) throws -> Double) throws -> Double {
     try db.drop()
     return try body(db)
@@ -138,35 +116,14 @@ func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) throws -> Double) th
 func benchmarkIO() throws {
     let db = try MongoClient().db("perftest")
 
-    // this benchmark isn't factored into any composite scores.
-    _ = try withDBCleanup(db: db, body: runCommandBenchmark)
+    try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
 
-    let findOne = try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
-    let smallInsertOne = try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
-    let largeInsertOne = try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
-    let findMany = try withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
-    let smallBulk = try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
-    let largeBulk = try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
-    let (multiImport, multiExport) = try runMultiJSONBenchmarks()
+    try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
+    try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
 
-    let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
-    print("SingleBench score: \(singleBenchResult)")
+    try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
+    try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
 
-    let multiBenchResult = average([findMany, smallBulk, largeBulk])
-    print("MultiBench score: \(multiBenchResult)")
-
-    // TODO: add gridfs results
-    let readBenchResult = average([findOne, findMany, multiExport])
-    print("ReadBench score: \(readBenchResult)")
-
-    // TODO: add gridfs results
-    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
-    print("WriteBench score: \(writeBenchResult)")
-
-    // TODO: add gridfs results
-    let parallelBenchResult = average([multiImport, multiExport])
-    print("ParallelBench score: \(parallelBenchResult)")
-
-    let driverBenchResult = average([readBenchResult, writeBenchResult])
-    print("DriverBench score: \(driverBenchResult)")
+    try withDBCleanup(db: db, body: runSmallFindManyBenchmark)
+    try withDBCleanup(db: db, body: runLargeFindManyBenchmark)
 }
