@@ -5,9 +5,9 @@
         "package": "mongo-swift-driver",
         "repositoryURL": "https://github.com/mongodb/mongo-swift-driver",
         "state": {
-          "branch": null,
-          "revision": "ec67468132743919e90a34a76073afcc4a13355e",
-          "version": "1.0.1"
+          "branch": "SWIFT-936/new-bson-library",
+          "revision": "0770d5227fd435f7a2d70c01b4374fe863f82a56",
+          "version": null
         }
       },
       {
@@ -15,8 +15,17 @@
         "repositoryURL": "https://github.com/Quick/Nimble.git",
         "state": {
           "branch": null,
-          "revision": "f8657642dfdec9973efc79cc68bcef43a653a2bc",
-          "version": "8.0.2"
+          "revision": "7a46a5fc86cb917f69e3daf79fcb045283d8f008",
+          "version": "8.1.2"
+        }
+      },
+      {
+        "package": "swift-bson",
+        "repositoryURL": "https://github.com/mongodb/swift-bson",
+        "state": {
+          "branch": "master",
+          "revision": "5dda5bf09645bdc2fb51b106fe879d115ab35c9e",
+          "version": null
         }
       },
       {
@@ -24,8 +33,8 @@
         "repositoryURL": "https://github.com/apple/swift-nio",
         "state": {
           "branch": null,
-          "revision": "5fc24345f92ec4c274121776c215ab0aa1ed4d50",
-          "version": "2.22.0"
+          "revision": "c3e2359c55cd8b47207ab7363b77c9c398a95294",
+          "version": "2.23.0"
         }
       }
     ]
