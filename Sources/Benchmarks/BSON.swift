@@ -11,6 +11,7 @@ let bsonTestFiles = [
 /// This is the "C driver version" of the BSON encoding benchmarks.
 /// The caller should specify a number of iterations that satisfies the spec requirements for how long this benchmark
 /// should run for.
+@discardableResult
 func runJSONToBSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name.prefix(4)) JSON to BSON")
     let json = file.json
@@ -24,6 +25,7 @@ func runJSONToBSONBenchmark(_ file: TestFile) throws -> Double {
 
 /// Runs a benchmark that tests how long it takes to convert BSON data corresponding to the JSON in the provided file
 /// back to JSON. This is the "C driver version" of the BSON decoding benchmarks.
+@discardableResult
 func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
     print("Benchmarking \(file.name.prefix(4)) BSON to JSON")
     let document = try BSONDocument(fromJSON: file.json)
@@ -71,10 +73,8 @@ func benchmarkBSON() throws {
     try runNativeToBSONBenchmark(bsonTestFiles[1], codableType: DeepBSON.self)
     try runNativeToBSONBenchmark(bsonTestFiles[2], codableType: FullBSON.self)
 
-    // bsonTestFiles.forEach { file in
-    //     [
-    //         try runJSONToBSONBenchmark(file),
-    //         try runBSONToJSONBenchmark(file)
-    //     ]
-    // }
+    try bsonTestFiles.forEach { file in
+        try runJSONToBSONBenchmark(file)
+        try runBSONToJSONBenchmark(file)
+    }
 }

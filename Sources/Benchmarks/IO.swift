@@ -116,13 +116,13 @@ func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) throws -> Double) th
 func benchmarkIO() throws {
     let db = try MongoClient().db("perftest")
 
-    // try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
+    try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
 
-    // try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
-    // try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
+    try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
+    try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
 
-    // try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
-    // try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
+    try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
+    try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
 
     try withDBCleanup(db: db, body: runSmallFindManyBenchmark)
     try withDBCleanup(db: db, body: runLargeFindManyBenchmark)
