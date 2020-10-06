@@ -35,11 +35,46 @@ func runBSONToJSONBenchmark(_ file: TestFile) throws -> Double {
     return calculateAndPrintResults(name: "\(file.name) BSON to JSON", time: results, size: file.size)
 }
 
+@discardableResult
+func runBSONToNativeBenchmark<T: Codable>(_ file: TestFile, codableType: T.Type) throws -> Double {
+    print("Benchmarking \(file.name.prefix(4)) BSON to native")
+    let document = try BSONDocument(fromJSON: file.json)
+    let decoder = BSONDecoder()
+    let results = try measureTask {
+        for _ in 1...10000 {
+            _ = try decoder.decode(codableType.self, from: document)
+        }
+    }
+    return calculateAndPrintResults(name: "\(file.name) BSON to native", time: results, size: file.size)
+}
+
+@discardableResult
+func runNativeToBSONBenchmark<T: Codable>(_ file: TestFile, codableType: T.Type) throws -> Double {
+    print("Benchmarking \(file.name.prefix(4)) native to BSON")
+    let document = try BSONDocument(fromJSON: file.json)
+    let decoded = try BSONDecoder().decode(codableType.self, from: document)
+    let encoder = BSONEncoder()
+    let results = try measureTask {
+        for _ in 1...10000 {
+            _ = try encoder.encode(decoded)
+        }
+    }
+    return calculateAndPrintResults(name: "\(file.name) native to BSON", time: results, size: file.size)
+}
+
 func benchmarkBSON() throws {
-    let allResults = try bsonTestFiles.map { file in
-        [
-            try runJSONToBSONBenchmark(file),
-            try runBSONToJSONBenchmark(file)
-        ]
-    }.reduce([], +)
+    try runBSONToNativeBenchmark(bsonTestFiles[0], codableType: FlatBSON.self)
+    try runBSONToNativeBenchmark(bsonTestFiles[1], codableType: DeepBSON.self)
+    try runBSONToNativeBenchmark(bsonTestFiles[2], codableType: FullBSON.self)
+
+    try runNativeToBSONBenchmark(bsonTestFiles[0], codableType: FlatBSON.self)
+    try runNativeToBSONBenchmark(bsonTestFiles[1], codableType: DeepBSON.self)
+    try runNativeToBSONBenchmark(bsonTestFiles[2], codableType: FullBSON.self)
+
+    // bsonTestFiles.forEach { file in
+    //     [
+    //         try runJSONToBSONBenchmark(file),
+    //         try runBSONToJSONBenchmark(file)
+    //     ]
+    // }
 }

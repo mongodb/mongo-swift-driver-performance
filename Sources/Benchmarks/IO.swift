@@ -58,12 +58,12 @@ func runLargeInsertOneBenchmark(using db: MongoDatabase) throws -> Double {
     try runInsertOneBenchmark(using: db, file: largeFile, copies: 10)
 }
 
-func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase, file: TestFile) throws -> Double {
+func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws -> Double {
     print("Benchmarking \(file.name) find() and empty cursor")
 
     let document = try BSONDocument(fromJSON: file.json)
     let collection = db.collection("corpus")
-    try collection.insertMany((1...10000).map { _ in document })
+    try collection.insertMany((1...copies).map { _ in document })
 
     let results = try measureTask {
         let cursor = try collection.find()
@@ -73,11 +73,11 @@ func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase, file: TestFile)
 }
 
 func runSmallFindManyBenchmark(using db: MongoDatabase) throws -> Double {
-    try runFindManyAndEmptyCursorBenchmark(using: db, file: smallFile)
+    try runFindManyAndEmptyCursorBenchmark(using: db, file: smallFile, copies: 10000)
 }
 
 func runLargeFindManyBenchmark(using db: MongoDatabase) throws -> Double {
-    try runFindManyAndEmptyCursorBenchmark(using: db, file: largeFile)
+    try runFindManyAndEmptyCursorBenchmark(using: db, file: largeFile, copies: 10)
 }
 
 func runBulkInsertBenchmark(using db: MongoDatabase, file: TestFile, copies: Int) throws -> Double {
@@ -116,13 +116,13 @@ func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) throws -> Double) th
 func benchmarkIO() throws {
     let db = try MongoClient().db("perftest")
 
-    try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
+    // try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
 
-    try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
-    try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
+    // try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
+    // try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
 
-    try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
-    try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
+    // try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
+    // try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
 
     try withDBCleanup(db: db, body: runSmallFindManyBenchmark)
     try withDBCleanup(db: db, body: runLargeFindManyBenchmark)
