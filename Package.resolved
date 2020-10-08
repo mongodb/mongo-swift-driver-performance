@@ -5,8 +5,8 @@
         "package": "mongo-swift-driver",
         "repositoryURL": "https://github.com/mongodb/mongo-swift-driver",
         "state": {
-          "branch": "SWIFT-936/new-bson-library",
-          "revision": "0770d5227fd435f7a2d70c01b4374fe863f82a56",
+          "branch": "new-bson-library-and-updates",
+          "revision": "9f0cc57be056b12d964a8d40e3a8b5ac55c1d18b",
           "version": null
         }
       },
@@ -23,8 +23,8 @@
         "package": "swift-bson",
         "repositoryURL": "https://github.com/mongodb/swift-bson",
         "state": {
-          "branch": "master",
-          "revision": "5dda5bf09645bdc2fb51b106fe879d115ab35c9e",
+          "branch": "efficient-skip-ahead",
+          "revision": "a92b396d5802c7e7d42f403d8ebe86bea7e78c2e",
           "version": null
         }
       },

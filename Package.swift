@@ -8,7 +8,8 @@ let package = Package(
     ],
     dependencies: [
         //.package(url: "https://github.com/mongodb/mongo-swift-driver", .upToNextMajor(from: "1.0.0"))
-        .package(url: "https://github.com/mongodb/mongo-swift-driver", .branch("SWIFT-936/new-bson-library"))
+        //.package(url: "https://github.com/mongodb/mongo-swift-driver", .branch("SWIFT-936/new-bson-library"))
+        .package(url: "https://github.com/mongodb/mongo-swift-driver", .branch("new-bson-library-and-updates"))
     ],
     targets: [
         .target(name: "Benchmarks", dependencies: ["MongoSwift", "MongoSwiftSync"])
