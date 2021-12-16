@@ -7,9 +7,12 @@ let package = Package(
         .macOS(.v10_14)
     ],
     dependencies: [
-        .package(url: "https://github.com/mongodb/mongo-swift-driver", .upToNextMajor(from: "1.0.0"))
+        .package(url: "https://github.com/mongodb/mongo-swift-driver", .branch("main")),
+        .package(url: "https://github.com/apple/swift-nio", .upToNextMajor(from: "2.33.0"))
     ],
     targets: [
-        .target(name: "Benchmarks", dependencies: ["MongoSwift", "MongoSwiftSync"])
+        .target(name: "BSON", dependencies: ["MongoSwift", "Common"]),
+        .target(name: "Common", dependencies: []),
+        .target(name: "IO", dependencies: ["MongoSwiftSync", "NIO", "Common"])
     ]
 )

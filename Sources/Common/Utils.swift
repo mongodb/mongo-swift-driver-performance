@@ -1,14 +1,13 @@
 import Foundation
-import MongoSwift
 
-let dataPath = "./data"
+public let dataPath = "./data"
 
-struct TestFile {
-    let name: String
-    let size: Double
-    let json: String
+public struct TestFile {
+    public let name: String
+    public let size: Double
+    public let json: String
 
-    init(name: String, size: Double) {
+    public init(name: String, size: Double) {
         self.name = name
         self.size = size
         // we only call this method with known valid paths, so it won't fail.
@@ -27,7 +26,7 @@ func measureTime(_ task: () throws -> Void) throws -> TimeInterval {
 
 /// Measure the median time for executing the provided operation. If `setup` is provided, it will be run before each
 /// measurement is taken.
-func measureTask(before: () throws -> Void = {}, task: () throws -> Void) throws -> TimeInterval {
+public func measureTask(before: () throws -> Void = {}, task: () throws -> Void) throws -> TimeInterval {
     var results = [TimeInterval]()
     var iterations = 0
     var totalTime = 0.0
@@ -51,12 +50,12 @@ func median<T: Comparable>(_ input: [T]) -> T {
 }
 
 /// Calculates the average value of an array of doubles.
-func average(_ input: [Double]) -> Double {
+public func average(_ input: [Double]) -> Double {
     input.reduce(0, +) / Double(input.count)
 }
 
 /// Calculates and prints the score for a benchmark.
-func calculateAndPrintResults(name: String, time: TimeInterval, size: Double) -> Double {
+public func calculateAndPrintResults(name: String, time: TimeInterval, size: Double) -> Double {
     let roundedTime = floor(time * 1000) / 1000
     let roundedScore = floor(size / time * 10000) / 10000
     print("Results for \(name): median time \(roundedTime) seconds, score \(roundedScore) MB/s")
