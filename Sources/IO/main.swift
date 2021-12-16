@@ -2,23 +2,15 @@ import Common
 import Foundation
 import MongoSwiftSync
 
-let tweetFile = TestFile(name: "tweet", size: 16.22)
-let smallFile = TestFile(name: "small_doc", size: 2.75)
-let largeFile = TestFile(name: "large_doc", size: 27.31)
-
-// Size in MB of {"isMaster": true}.
-let runCommandSize = 0.16
-
 func runCommandBenchmark(using db: MongoDatabase) throws -> Double {
     print("Benchmarking runCommand")
 
-    let command: BSONDocument = ["isMaster": true]
     let results = try measureTask {
         for _ in 1...10000 {
-            _ = try db.runCommand(command)
+            _ = try db.runCommand(helloCommand)
         }
     }
-    return calculateAndPrintResults(name: "runCommand", time: results, size: runCommandSize)
+    return calculateAndPrintResults(name: "runCommand", time: results, size: helloCommandSize)
 }
 
 func runFindOneByIdBenchmark(using db: MongoDatabase) throws -> Double {
@@ -115,22 +107,6 @@ func runLargeBulkInsertBenchmark(using db: MongoDatabase) throws -> Double {
     try runBulkInsertBenchmark(using: db, file: largeFile, copies: 10)
 }
 
-let ioBenchmarks: [(MongoDatabase) throws -> Double] = [
-    runCommandBenchmark,
-    runFindOneByIdBenchmark,
-    runSmallInsertOneBenchmark,
-    runLargeInsertOneBenchmark,
-    runFindManyAndEmptyCursorBenchmark,
-    runSmallBulkInsertBenchmark,
-    runLargeBulkInsertBenchmark
-]
-
-let multiDocBenchmarks: [(MongoDatabase) throws -> Double] = [
-    runFindManyAndEmptyCursorBenchmark,
-    runSmallBulkInsertBenchmark,
-    runLargeBulkInsertBenchmark
-]
-
 func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) throws -> Double) throws -> Double {
     try db.drop()
     return try body(db)
@@ -171,3 +147,5 @@ func benchmarkIO() throws {
     let driverBenchResult = average([readBenchResult, writeBenchResult])
     print("DriverBench score: \(driverBenchResult)")
 }
+
+try benchmarkIO()

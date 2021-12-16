@@ -1,4 +1,5 @@
 import Foundation
+import MongoSwift
 
 public let dataPath = "./data"
 
@@ -16,10 +17,27 @@ public struct TestFile {
     }
 }
 
+public let tweetFile = TestFile(name: "tweet", size: 16.22)
+public let smallFile = TestFile(name: "small_doc", size: 2.75)
+public let largeFile = TestFile(name: "large_doc", size: 27.31)
+
+public let helloCommand: BSONDocument = ["hello": true]
+// Size in MB of hello command.
+public let helloCommandSize = 0.13
+
 /// Measure the time for a single execution of the provided closure.
 func measureTime(_ task: () throws -> Void) throws -> TimeInterval {
     let startTime = ProcessInfo.processInfo.systemUptime
     try task()
+    let timeElapsed = ProcessInfo.processInfo.systemUptime - startTime
+    return timeElapsed
+}
+
+/// Measure the time for a single execution of the provided closure.
+@available(macOS 12.0, *)
+func measureTime(_ task: () async throws -> Void) async throws -> TimeInterval {
+    let startTime = ProcessInfo.processInfo.systemUptime
+    try await task()
     let timeElapsed = ProcessInfo.processInfo.systemUptime - startTime
     return timeElapsed
 }
@@ -37,6 +55,30 @@ public func measureTask(before: () throws -> Void = {}, task: () throws -> Void)
     while totalTime < 60.0 || (iterations < 100 && totalTime < 300.0) {
         try before()
         let measurement = try measureTime(task)
+        results.append(measurement)
+        iterations += 1
+        totalTime += measurement
+    }
+    return median(results)
+}
+
+/// Measure the median time for executing the provided operation. If `setup` is provided, it will be run before each
+/// measurement is taken.
+@available(macOS 12.0, *)
+public func measureTask(
+    before: () async throws -> Void = {},
+    task: () async throws -> Void
+) async throws -> TimeInterval {
+    var results = [TimeInterval]()
+    var iterations = 0
+    var totalTime = 0.0
+
+    // Iterations should loop for at least 1 minute cumulative execution time.
+    // Iterations should stop after 100 iterations or 5 minutes cumulative execution time,
+    // whichever is shorter.
+    while totalTime < 60.0 || (iterations < 100 && totalTime < 300.0) {
+        try await before()
+        let measurement = try await measureTime(task)
         results.append(measurement)
         iterations += 1
         totalTime += measurement
