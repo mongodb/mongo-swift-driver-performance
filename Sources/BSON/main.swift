@@ -1,5 +1,6 @@
+import Common
 import Foundation
-import MongoSwift
+import SwiftBSON
 
 struct DocElem {
     let key: String
@@ -115,3 +116,5 @@ func benchmarkBSON() throws {
     }.reduce([], +)
     print("BSONBench score: \(average(allResults))")
 }
+
+try benchmarkBSON()

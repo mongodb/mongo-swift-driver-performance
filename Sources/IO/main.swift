@@ -1,5 +1,7 @@
+import Common
 import Foundation
 import MongoSwiftSync
+import Parallel
 
 let tweetFile = TestFile(name: "tweet", size: 16.22)
 let smallFile = TestFile(name: "small_doc", size: 2.75)
@@ -170,3 +172,5 @@ func benchmarkIO() throws {
     let driverBenchResult = average([readBenchResult, writeBenchResult])
     print("DriverBench score: \(driverBenchResult)")
 }
+
+try benchmarkIO()

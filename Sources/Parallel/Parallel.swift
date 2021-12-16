@@ -1,3 +1,4 @@
+import Common
 import Foundation
 import MongoSwift
 import NIO
@@ -148,7 +149,7 @@ func exportJSONFile(
     return write
 }
 
-func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Double) {
+public func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Double) {
     // Setup
     let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
     let client = try MongoClient(using: elg)
