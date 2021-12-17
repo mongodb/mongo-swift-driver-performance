@@ -1,13 +1,19 @@
 import Foundation
 import MongoSwift
 
+/// Path where benchmarking data is stored.
 public let dataPath = "./data"
 
+/// Struct representing a file used for the benchmarks.
 public struct TestFile {
+    /// The name of this file.
     public let name: String
+    /// The size of the file, in MB.
     public let size: Double
+    /// The JSON contents of the file.
     public let json: String
 
+    /// Initializes a new `TestFile`.
     public init(name: String, size: Double) {
         self.name = name
         self.size = size
@@ -17,12 +23,17 @@ public struct TestFile {
     }
 }
 
+/// Tweet file for use in benchmarks.
 public let tweetFile = TestFile(name: "tweet", size: 16.22)
+/// Small file for use in benchmarks.
 public let smallFile = TestFile(name: "small_doc", size: 2.75)
+/// Large file for use in benchmarks.
 public let largeFile = TestFile(name: "large_doc", size: 27.31)
 
+/// Hello command for use in benchmarks.
+/// Per spec: "We use {hello:true} rather than {hello:1} to ensure a consistent command size."
 public let helloCommand: BSONDocument = ["hello": true]
-// Size in MB of hello command.
+/// Size in MB of hello command.
 public let helloCommandSize = 0.13
 
 /// Measure the time for a single execution of the provided closure.

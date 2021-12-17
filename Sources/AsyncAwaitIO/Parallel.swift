@@ -29,7 +29,7 @@ let ldJSONSize = 565.0
 // Shared allocator to use throughout the benchmarks.
 let allocator = ByteBufferAllocator()
 
- /**
+/**
  * Imports all LDJSON files to the specified collection. This works by firing off 1 chained async call for each file
  * and combining their results into a single future. Each chained call works by:
  * 1. Reading in the entire contents of the file using `NonBlockingFileIO`.
@@ -46,7 +46,7 @@ func importAllFiles(
     eventLoopGroup: EventLoopGroup,
     ioHandler: NonBlockingFileIO,
     addFileIds: Bool = false
-) async throws -> Void {
+) async throws {
     _ = await withThrowingTaskGroup(of: Void.self) { group in
         (0...99).map { id in
             group.addTask {
@@ -69,7 +69,7 @@ func importJSONFile(
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO,
     addFileId: Bool
-) async throws -> Void {
+) async throws {
     let (handle, region) = try await ioHandler.openFile(path: getInputFilePath(forId: id), eventLoop: eventLoop).get()
     defer { _ = try? handle.close() }
 
@@ -79,9 +79,9 @@ func importJSONFile(
         eventLoop: eventLoop
     ).get()
     let docs = buffer.readBytes(length: fileLength)! // swiftlint:disable:this force_unwrapping
-            .split(separator: 10) // 10 is byte code for "\n"
-            .map { try! BSONDocument(fromJSON: Data($0)) } // swiftlint:disable:this force_try
-    
+        .split(separator: 10) // 10 is byte code for "\n"
+        .map { try! BSONDocument(fromJSON: Data($0)) } // swiftlint:disable:this force_try
+
     if addFileId {
         let docsWithIds: [BSONDocument] = docs.map { doc in
             var copy = doc
@@ -94,7 +94,7 @@ func importJSONFile(
     }
 }
 
- /**
+/**
  * Exports the specified collection to a set of LDJSON files. This works by firing off 1 chained async call for each
  * file and combining their results into a single future. Each chained call works by:
  * 1. Creating a cursor over documents in the collection with the specified file id.
@@ -103,12 +103,12 @@ func importJSONFile(
  *
  * The work will be spread over across the event loops in the provided group.
  */
- @available(macOS 12.0, *)
+@available(macOS 12.0, *)
 func exportCollection(
     _ collection: MongoCollection<BSONDocument>,
     eventLoopGroup: EventLoopGroup,
     ioHandler: NonBlockingFileIO
-) async throws -> Void {
+) async throws {
     _ = await withThrowingTaskGroup(of: Void.self) { group in
         (0...99).map { id in
             group.addTask {
@@ -129,7 +129,7 @@ func exportJSONFile(
     from collection: MongoCollection<BSONDocument>,
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO
-) async throws -> Void {
+) async throws {
     let handle = try NIOFileHandle(path: getOutputFilePath(forId: id), mode: .write)
     defer { try? handle.close() }
 

@@ -172,6 +172,7 @@ func benchmarkIO() async throws {
 
 if #available(macOS 12, *) {
     let dg = DispatchGroup()
+    dg.enter()
     Task {
         do {
             try await benchmarkIO()
