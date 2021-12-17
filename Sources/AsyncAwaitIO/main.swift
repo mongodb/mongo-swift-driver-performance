@@ -127,7 +127,7 @@ func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) async throws -> Doub
 
 @available(macOS 12, *)
 func benchmarkIO() async throws {
-    let elg = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
     defer {
         try? elg.syncShutdownGracefully()
     }
