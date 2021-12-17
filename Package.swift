@@ -12,7 +12,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "BSON", dependencies: ["MongoSwift", "Common"]),
-        .target(name: "Common", dependencies: ["MongoSwift"]),
+        .target(name: "Common", dependencies: ["MongoSwift", "NIO"]),
         .target(name: "IO", dependencies: ["MongoSwiftSync", "NIO", "Common"]),
         .target(name: "AsyncAwaitIO", dependencies: ["MongoSwift", "NIO", "Common"])
     ]
