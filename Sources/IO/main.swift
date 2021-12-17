@@ -75,7 +75,7 @@ func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) throws -> Doubl
 
     let results = try measureTask {
         let cursor = try collection.find()
-        _ = Array(cursor)
+        for _ in cursor {}
     }
     return calculateAndPrintResults(name: "findManyAndEmptyCursor", time: results, size: tweetFile.size)
 }

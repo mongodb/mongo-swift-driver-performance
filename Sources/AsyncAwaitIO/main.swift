@@ -84,7 +84,7 @@ func runFindManyAndEmptyCursorBenchmark(using db: MongoDatabase) async throws ->
 
     let results = try await measureTask {
         let cursor = try await collection.find()
-        _ = try await cursor.toArray()
+        for try await _ in cursor {}
     }
     return calculateAndPrintResults(name: "findManyAndEmptyCursor", time: results, size: tweetFile.size)
 }
