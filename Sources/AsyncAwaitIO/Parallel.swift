@@ -5,8 +5,8 @@ import NIO
 
 /**
  * Imports all LDJSON files to the specified collection.
- *
- * The work will be spread over across the event loops in the provided group.
+ * A child task is used for each file to read it from disk and then insert it into the collection.
+ * The work to read from disk will be spread over across the event loops in the provided group.
  * If addFileIds is true (useful for splitting up work in the export benchmark), the id of the source file is added to
  * each document that is inserted.
  */
@@ -67,15 +67,8 @@ func importJSONFile(
     }
 }
 
-/**
- * Exports the specified collection to a set of LDJSON files. This works by firing off 1 chained async call for each
- * file and combining their results into a single future. Each chained call works by:
- * 1. Creating a cursor over documents in the collection with the specified file id.
- * 2. Writing all of the JSON data for the file into a ByteBuffer.
- * 3. Using `NonBlockingFileIO` to write the contents of the `ByteBuffer` to to disk.
- *
- * The work will be spread over across the event loops in the provided group.
- */
+/// Exports the specified collection to a set of LDJSON files. A child task is used for each file and the work to write
+/// to disk will be spread across the event loops in the provided group.
 @available(macOS 12.0, *)
 func exportCollection(
     _ collection: MongoCollection<BSONDocument>,
