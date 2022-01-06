@@ -140,38 +140,29 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
     }
     let fileIO = NonBlockingFileIO(threadPool: threadPool)
 
-    // let importResult = try measureTask(
-    //     before: {
-    //         _ = try db.drop().wait()
-    //         _ = try db.createCollection("corpus").wait()
-    //     },
-    //     task: {
-    //         try importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
-    //     }
-    // )
+    let importResult = try measureTask(
+        before: {
+            _ = try db.drop().wait()
+            _ = try db.createCollection("corpus").wait()
+        },
+        task: {
+            try importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
+        }
+    )
 
-    // let importScore = calculateAndPrintResults(name: "LDJSON Multi-file Import", time: importResult, size: ldJSONSize)
+    let importScore = calculateAndPrintResults(name: "LDJSON Multi-file Import", time: importResult, size: ldJSONSize)
 
     // One-time setup for the export benchmark.
     _ = try db.drop().wait()
     _ = try importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO, addFileIds: true).wait()
     _ = try coll.createIndex(["fileId": .int32(1)]).wait()
 
-    let exportResult = try measureTask(
-        before: {
-            try? FileManager.default.removeItem(at: parallelOutputPath)
-            try FileManager.default.createDirectory(atPath: parallelOutputPath.path, withIntermediateDirectories: false)
-            (0...99).forEach { id in
-                _ = FileManager.default.createFile(atPath: getParallelOutputFilePath(forId: Int32(id)).path, contents: nil)
-            }
-        },
-        task: {
-            _ = try exportCollection(coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
-        }
-    )
+    let exportResult = try measureTask(before: parallelOutputSetup) {
+        _ = try exportCollection(coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
+    }
 
     let outputScore = calculateAndPrintResults(name: "LDJSON Multi-file Export", time: exportResult, size: ldJSONSize)
-    try FileManager.default.removeItem(at: parallelOutputPath)
+    try parallelOutputCleanup()
 
-    return (importScore: 0, outputScore: outputScore)
+    return (importScore: importScore, outputScore: outputScore)
 }

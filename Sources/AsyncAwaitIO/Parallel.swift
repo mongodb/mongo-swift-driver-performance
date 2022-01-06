@@ -40,7 +40,10 @@ func importJSONFile(
     ioHandler: NonBlockingFileIO,
     addFileId: Bool
 ) async throws {
-    let (handle, region) = try await ioHandler.openFile(path: getParallelInputFilePath(forId: id).path, eventLoop: eventLoop).get()
+    let (handle, region) = try await ioHandler.openFile(
+        path: getParallelInputFilePath(forId: id).path,
+        eventLoop: eventLoop
+    ).get()
     defer { _ = try? handle.close() }
 
     var buffer = try await ioHandler.read(
@@ -130,38 +133,29 @@ func runMultiJSONBenchmarks() async throws -> (importScore: Double, outputScore:
     }
     let fileIO = NonBlockingFileIO(threadPool: threadPool)
 
-    // let importResult = try await measureTask(
-    //     before: {
-    //         _ = try await db.drop()
-    //         _ = try await db.createCollection("corpus")
-    //     },
-    //     task: {
-    //         try await importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO)
-    //     }
-    // )
+    let importResult = try await measureTask(
+        before: {
+            _ = try await db.drop()
+            _ = try await db.createCollection("corpus")
+        },
+        task: {
+            try await importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO)
+        }
+    )
 
-    // let importScore = calculateAndPrintResults(name: "LDJSON Multi-file Import", time: importResult, size: ldJSONSize)
+    let importScore = calculateAndPrintResults(name: "LDJSON Multi-file Import", time: importResult, size: ldJSONSize)
 
     // One-time setup for the export benchmark.
     _ = try await db.drop()
     _ = try await importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO, addFileIds: true)
     _ = try await coll.createIndex(["fileId": .int32(1)])
 
-    let exportResult = try await measureTask(
-        before: {
-            try? FileManager.default.removeItem(at: parallelOutputPath)
-            try FileManager.default.createDirectory(at: parallelOutputPath, withIntermediateDirectories: false)
-            (0...99).forEach { id in
-                _ = FileManager.default.createFile(atPath: getParallelOutputFilePath(forId: Int32(id)).path, contents: nil)
-            }
-        },
-        task: {
-            _ = try await exportCollection(coll, eventLoopGroup: elg, ioHandler: fileIO)
-        }
-    )
+    let exportResult = try await measureTask(before: parallelOutputSetup) {
+        _ = try await exportCollection(coll, eventLoopGroup: elg, ioHandler: fileIO)
+    }
 
     let outputScore = calculateAndPrintResults(name: "LDJSON Multi-file Export", time: exportResult, size: ldJSONSize)
-    try FileManager.default.removeItem(at: parallelOutputPath)
+    try parallelOutputCleanup()
 
-    return (importScore: 0, outputScore: outputScore)
+    return (importScore: importScore, outputScore: outputScore)
 }

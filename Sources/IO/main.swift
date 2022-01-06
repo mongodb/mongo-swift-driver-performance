@@ -116,36 +116,36 @@ func benchmarkIO() throws {
     let db = try MongoClient().db("perftest")
 
     // this benchmark isn't factored into any composite scores.
-    // _ = try withDBCleanup(db: db, body: runCommandBenchmark)
+    _ = try withDBCleanup(db: db, body: runCommandBenchmark)
 
-    // let findOne = try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
-    // let smallInsertOne = try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
-    // let largeInsertOne = try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
-    // let findMany = try withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
-    // let smallBulk = try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
-    // let largeBulk = try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
+    let findOne = try withDBCleanup(db: db, body: runFindOneByIdBenchmark)
+    let smallInsertOne = try withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
+    let largeInsertOne = try withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
+    let findMany = try withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
+    let smallBulk = try withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
+    let largeBulk = try withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
     let (multiImport, multiExport) = try runMultiJSONBenchmarks()
 
-    // let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
-    // print("SingleBench score: \(singleBenchResult)")
+    let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
+    print("SingleBench score: \(singleBenchResult)")
 
-    // let multiBenchResult = average([findMany, smallBulk, largeBulk])
-    // print("MultiBench score: \(multiBenchResult)")
+    let multiBenchResult = average([findMany, smallBulk, largeBulk])
+    print("MultiBench score: \(multiBenchResult)")
 
-    // // TODO: add gridfs results
-    // let readBenchResult = average([findOne, findMany, multiExport])
-    // print("ReadBench score: \(readBenchResult)")
+    // TODO: add gridfs results
+    let readBenchResult = average([findOne, findMany, multiExport])
+    print("ReadBench score: \(readBenchResult)")
 
-    // // TODO: add gridfs results
-    // let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
-    // print("WriteBench score: \(writeBenchResult)")
+    // TODO: add gridfs results
+    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
+    print("WriteBench score: \(writeBenchResult)")
 
-    // // TODO: add gridfs results
-    // let parallelBenchResult = average([multiImport, multiExport])
-    // print("ParallelBench score: \(parallelBenchResult)")
+    // TODO: add gridfs results
+    let parallelBenchResult = average([multiImport, multiExport])
+    print("ParallelBench score: \(parallelBenchResult)")
 
-    // let driverBenchResult = average([readBenchResult, writeBenchResult])
-    // print("DriverBench score: \(driverBenchResult)")
+    let driverBenchResult = average([readBenchResult, writeBenchResult])
+    print("DriverBench score: \(driverBenchResult)")
 }
 
 try benchmarkIO()

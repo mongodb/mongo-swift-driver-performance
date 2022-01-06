@@ -2,10 +2,10 @@ import Foundation
 import MongoSwift
 
 func getDataPath() -> URL {
-        let thisFile = URL(fileURLWithPath: #file)
-        // We are in Sources/Common/Utils.swift; drop 3 components to get up to the root directory.
-        let baseDirectory = thisFile.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        return baseDirectory.appendingPathComponent("data")
+    let thisFile = URL(fileURLWithPath: #file)
+    // We are in Sources/Common/Utils.swift; drop 3 components to get up to the root directory.
+    let baseDirectory = thisFile.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    return baseDirectory.appendingPathComponent("data")
 }
 
 /// Get where benchmarking data is stored.

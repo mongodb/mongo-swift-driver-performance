@@ -1,16 +1,16 @@
 import Foundation
 import NIO
 
-let parallelInputPath = dataPath.appendingPathComponent("ldjson_multi")
-public let parallelOutputPath = dataPath.appendingPathComponent("ldjson_multi_output")
-
-public func paddedId(_ id: Int32) -> String {
+func paddedId(_ id: Int32) -> String {
     var num = String(id)
     while num.count < 3 {
         num = "0" + num
     }
     return num
 }
+
+let parallelInputPath = dataPath.appendingPathComponent("ldjson_multi")
+let parallelOutputPath = dataPath.appendingPathComponent("ldjson_multi_output")
 
 /// Gets the input path for a file in the parallel benchmark with the specified id.
 public func getParallelInputFilePath(forId id: Int32) -> URL {
@@ -29,3 +29,19 @@ public let ldJSONSize = 565.0
 /// Shared allocator to use throughout the benchmarks.
 public let allocator = ByteBufferAllocator()
 
+/// Setup code for the LDJSON export benchmark.
+public func parallelOutputSetup() throws {
+    try? FileManager.default.removeItem(at: parallelOutputPath)
+    try FileManager.default.createDirectory(atPath: parallelOutputPath.path, withIntermediateDirectories: false)
+    (0...99).forEach { id in
+        _ = FileManager.default.createFile(
+            atPath: getParallelOutputFilePath(forId: Int32(id)).path,
+            contents: nil
+        )
+    }
+}
+
+/// Cleanup code for the parallel output benchmark.
+public func parallelOutputCleanup() throws {
+    try FileManager.default.removeItem(at: parallelOutputPath)
+}
