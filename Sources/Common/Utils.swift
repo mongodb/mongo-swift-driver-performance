@@ -1,8 +1,15 @@
 import Foundation
 import MongoSwift
 
-/// Path where benchmarking data is stored.
-public let dataPath = "./data"
+func getDataPath() -> URL {
+        let thisFile = URL(fileURLWithPath: #file)
+        // We are in Sources/Common/Utils.swift; drop 3 components to get up to the root directory.
+        let baseDirectory = thisFile.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return baseDirectory.appendingPathComponent("data")
+}
+
+/// Get where benchmarking data is stored.
+public let dataPath = getDataPath()
 
 /// Struct representing a file used for the benchmarks.
 public struct TestFile {
@@ -19,7 +26,7 @@ public struct TestFile {
         self.size = size
         // we only call this method with known valid paths, so it won't fail.
         // swiftlint:disable:next force_try
-        self.json = try! String(contentsOf: URL(fileURLWithPath: "\(dataPath)/\(name).json"))
+        self.json = try! String(contentsOf: dataPath.appendingPathComponent("\(name).json"))
     }
 }
 

@@ -127,47 +127,47 @@ func withDBCleanup(db: MongoDatabase, body: (MongoDatabase) async throws -> Doub
 
 @available(macOS 12, *)
 func benchmarkIO() async throws {
-    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
-    defer {
-        try? elg.syncShutdownGracefully()
-    }
-    let client = try MongoClient(using: elg)
-    defer {
-        try? client.syncClose()
-    }
-    let db = client.db("perftest")
+//    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
+//    defer {
+//        try? elg.syncShutdownGracefully()
+//    }
+//    let client = try MongoClient(using: elg)
+//    defer {
+//        try? client.syncClose()
+//    }
+//    let db = client.db("perftest")
 
-    // this benchmark isn't factored into any composite scores.
-    _ = try await withDBCleanup(db: db, body: runCommandBenchmark)
-
-    let findOne = try await withDBCleanup(db: db, body: runFindOneByIdBenchmark)
-    let smallInsertOne = try await withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
-    let largeInsertOne = try await withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
-    let findMany = try await withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
-    let smallBulk = try await withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
-    let largeBulk = try await withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
+//    // this benchmark isn't factored into any composite scores.
+//    _ = try await withDBCleanup(db: db, body: runCommandBenchmark)
+//
+//    let findOne = try await withDBCleanup(db: db, body: runFindOneByIdBenchmark)
+//    let smallInsertOne = try await withDBCleanup(db: db, body: runSmallInsertOneBenchmark)
+//    let largeInsertOne = try await withDBCleanup(db: db, body: runLargeInsertOneBenchmark)
+//    let findMany = try await withDBCleanup(db: db, body: runFindManyAndEmptyCursorBenchmark)
+//    let smallBulk = try await withDBCleanup(db: db, body: runSmallBulkInsertBenchmark)
+//    let largeBulk = try await withDBCleanup(db: db, body: runLargeBulkInsertBenchmark)
     let (multiImport, multiExport) = try await runMultiJSONBenchmarks()
-
-    let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
-    print("SingleBench score: \(singleBenchResult)")
-
-    let multiBenchResult = average([findMany, smallBulk, largeBulk])
-    print("MultiBench score: \(multiBenchResult)")
-
-    // TODO: add gridfs results
-    let readBenchResult = average([findOne, findMany, multiExport])
-    print("ReadBench score: \(readBenchResult)")
-
-    // TODO: add gridfs results
-    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
-    print("WriteBench score: \(writeBenchResult)")
-
-    // TODO: add gridfs results
-    let parallelBenchResult = average([multiImport, multiExport])
-    print("ParallelBench score: \(parallelBenchResult)")
-
-    let driverBenchResult = average([readBenchResult, writeBenchResult])
-    print("DriverBench score: \(driverBenchResult)")
+//
+//    let singleBenchResult = average([findOne, smallInsertOne, largeInsertOne])
+//    print("SingleBench score: \(singleBenchResult)")
+//
+//    let multiBenchResult = average([findMany, smallBulk, largeBulk])
+//    print("MultiBench score: \(multiBenchResult)")
+//
+//    // TODO: add gridfs results
+//    let readBenchResult = average([findOne, findMany, multiExport])
+//    print("ReadBench score: \(readBenchResult)")
+//
+//    // TODO: add gridfs results
+//    let writeBenchResult = average([smallInsertOne, largeInsertOne, smallBulk, largeBulk, multiImport])
+//    print("WriteBench score: \(writeBenchResult)")
+//
+//    // TODO: add gridfs results
+//    let parallelBenchResult = average([multiImport, multiExport])
+//    print("ParallelBench score: \(parallelBenchResult)")
+//
+//    let driverBenchResult = average([readBenchResult, writeBenchResult])
+//    print("DriverBench score: \(driverBenchResult)")
 }
 
 if #available(macOS 12, *) {

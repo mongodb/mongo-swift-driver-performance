@@ -41,7 +41,7 @@ func importJSONFile(
     ioHandler: NonBlockingFileIO,
     addFileId: Bool
 ) -> EventLoopFuture<InsertManyResult?> {
-    ioHandler.openFile(path: getParallelInputFilePath(forId: id), eventLoop: eventLoop).flatMap { handle, region in
+    ioHandler.openFile(path: getParallelInputFilePath(forId: id).path, eventLoop: eventLoop).flatMap { handle, region in
         let readAndInsert: EventLoopFuture<InsertManyResult?> = ioHandler.read(
             fileRegion: region,
             allocator: allocator,
@@ -105,7 +105,7 @@ func exportJSONFile(
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO
 ) throws -> EventLoopFuture<Void> {
-    let handle = try NIOFileHandle(path: getParallelOutputFilePath(forId: id), mode: .write)
+    let handle = try NIOFileHandle(path: getParallelOutputFilePath(forId: id).path, mode: .write)
     let write: EventLoopFuture<Void> = collection.find(["fileId": .int32(id)], options: FindOptions(batchSize: 5000))
         .flatMap { $0.toArray() }
         .flatMap { docs in
@@ -159,10 +159,10 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
 
     let exportResult = try measureTask(
         before: {
-            try? FileManager.default.removeItem(atPath: parallelOutputPath)
-            try FileManager.default.createDirectory(atPath: parallelOutputPath, withIntermediateDirectories: false)
+            try? FileManager.default.removeItem(at: parallelOutputPath)
+            try FileManager.default.createDirectory(atPath: parallelOutputPath.path, withIntermediateDirectories: false)
             (0...99).forEach { id in
-                _ = FileManager.default.createFile(atPath: getParallelOutputFilePath(forId: Int32(id)), contents: nil)
+                _ = FileManager.default.createFile(atPath: getParallelOutputFilePath(forId: Int32(id)).path, contents: nil)
             }
         },
         task: {
@@ -171,7 +171,7 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
     )
 
     let outputScore = calculateAndPrintResults(name: "LDJSON Multi-file Export", time: exportResult, size: ldJSONSize)
-    try FileManager.default.removeItem(atPath: parallelOutputPath)
+    try FileManager.default.removeItem(at: parallelOutputPath)
 
     return (importScore: importScore, outputScore: outputScore)
 }
