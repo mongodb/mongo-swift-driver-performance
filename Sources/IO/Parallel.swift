@@ -125,7 +125,7 @@ func exportJSONFile(
 
 func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Double) {
     // Setup
-    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
+    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 50)
     let client = try MongoClient(using: elg)
     defer {
         try? client.syncClose()
@@ -140,17 +140,17 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
     }
     let fileIO = NonBlockingFileIO(threadPool: threadPool)
 
-    let importResult = try measureTask(
-        before: {
-            _ = try db.drop().wait()
-            _ = try db.createCollection("corpus").wait()
-        },
-        task: {
-            try importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
-        }
-    )
+    // let importResult = try measureTask(
+    //     before: {
+    //         _ = try db.drop().wait()
+    //         _ = try db.createCollection("corpus").wait()
+    //     },
+    //     task: {
+    //         try importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
+    //     }
+    // )
 
-    let importScore = calculateAndPrintResults(name: "LDJSON Multi-file Import", time: importResult, size: ldJSONSize)
+    // let importScore = calculateAndPrintResults(name: "LDJSON Multi-file Import", time: importResult, size: ldJSONSize)
 
     // One-time setup for the export benchmark.
     _ = try db.drop().wait()
@@ -173,5 +173,5 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
     let outputScore = calculateAndPrintResults(name: "LDJSON Multi-file Export", time: exportResult, size: ldJSONSize)
     try FileManager.default.removeItem(at: parallelOutputPath)
 
-    return (importScore: importScore, outputScore: outputScore)
+    return (importScore: 0, outputScore: outputScore)
 }
