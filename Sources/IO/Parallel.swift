@@ -109,7 +109,7 @@ func exportJSONFile(
     let write: EventLoopFuture<Void> = collection.find(["fileId": .int32(id)], options: FindOptions(batchSize: 5000))
         .flatMap { $0.toArray() }
         .flatMap { docs in
-            var buffer = allocator.buffer(capacity: docs[0].toExtendedJSONString().utf8.count * 5000)
+            var buffer = allocator.buffer(capacity: 1000 * 5000)
             docs.forEach { doc in
                 _ = buffer.writeString(doc.toExtendedJSONString() + "\n")
             }

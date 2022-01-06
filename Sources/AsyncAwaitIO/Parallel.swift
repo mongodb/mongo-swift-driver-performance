@@ -3,42 +3,12 @@ import Foundation
 import MongoSwift
 import NIO
 
-let inputPath = "\(dataPath)/ldjson_multi"
-let outputPath = "\(dataPath)/ldjson_multi_output"
-
-func paddedId(_ id: Int32) -> String {
-    var num = String(id)
-    while num.count < 3 {
-        num = "0" + num
-    }
-    return num
-}
-
-func getInputFilePath(forId id: Int32) -> String {
-    "\(inputPath)/ldjson\(paddedId(id)).txt"
-}
-
-func getOutputFilePath(forId id: Int32) -> String {
-    "\(outputPath)/ldjson\(paddedId(id)).txt"
-}
-
-// Length of each LDJSON file in bytes.
-let fileLength = 5_650_000
-// Total size of dataset in MB.
-let ldJSONSize = 565.0
-// Shared allocator to use throughout the benchmarks.
-let allocator = ByteBufferAllocator()
-
 /**
- * Imports all LDJSON files to the specified collection. This works by firing off 1 chained async call for each file
- * and combining their results into a single future. Each chained call works by:
- * 1. Reading in the entire contents of the file using `NonBlockingFileIO`.
- * 2. Converting the resulting bytes into documents.
- * 3. Bulk inserting the documents into the collection.
+ * Imports all LDJSON files to the specified collection.
  *
  * The work will be spread over across the event loops in the provided group.
  * If addFileIds is true (useful for splitting up work in the export benchmark), the id of the source file is added to
- * each document that is insered.
+ * each document that is inserted.
  */
 @available(macOS 12.0, *)
 func importAllFiles(
@@ -70,7 +40,7 @@ func importJSONFile(
     ioHandler: NonBlockingFileIO,
     addFileId: Bool
 ) async throws {
-    let (handle, region) = try await ioHandler.openFile(path: getInputFilePath(forId: id), eventLoop: eventLoop).get()
+    let (handle, region) = try await ioHandler.openFile(path: getParallelInputFilePath(forId: id), eventLoop: eventLoop).get()
     defer { _ = try? handle.close() }
 
     var buffer = try await ioHandler.read(
@@ -78,12 +48,12 @@ func importJSONFile(
         allocator: allocator,
         eventLoop: eventLoop
     ).get()
-    let docs = buffer.readBytes(length: fileLength)! // swiftlint:disable:this force_unwrapping
+    let docs = buffer.readBytes(length: parallelFileLength)! // swiftlint:disable:this force_unwrapping
         .split(separator: 10) // 10 is byte code for "\n"
         .map { try! BSONDocument(fromJSON: Data($0)) } // swiftlint:disable:this force_try
 
     if addFileId {
-        let docsWithIds: [BSONDocument] = docs.map { doc in
+        let docsWithIds = docs.map { doc -> BSONDocument in
             var copy = doc
             copy["fileId"] = .int32(id)
             return copy
@@ -130,7 +100,7 @@ func exportJSONFile(
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO
 ) async throws {
-    let handle = try NIOFileHandle(path: getOutputFilePath(forId: id), mode: .write)
+    let handle = try NIOFileHandle(path: getParallelOutputFilePath(forId: id), mode: .write)
     defer { try? handle.close() }
 
     var buffer = allocator.buffer(capacity: 1000 * 5000)
@@ -179,10 +149,10 @@ func runMultiJSONBenchmarks() async throws -> (importScore: Double, outputScore:
 
     let exportResult = try await measureTask(
         before: {
-            try? FileManager.default.removeItem(atPath: outputPath)
-            try FileManager.default.createDirectory(atPath: outputPath, withIntermediateDirectories: false)
+            try? FileManager.default.removeItem(atPath: parallelOutputPath)
+            try FileManager.default.createDirectory(atPath: parallelOutputPath, withIntermediateDirectories: false)
             (0...99).forEach { id in
-                _ = FileManager.default.createFile(atPath: getOutputFilePath(forId: Int32(id)), contents: nil)
+                _ = FileManager.default.createFile(atPath: getParallelOutputFilePath(forId: Int32(id)), contents: nil)
             }
         },
         task: {
@@ -191,7 +161,7 @@ func runMultiJSONBenchmarks() async throws -> (importScore: Double, outputScore:
     )
 
     let outputScore = calculateAndPrintResults(name: "LDJSON Multi-file Export", time: exportResult, size: ldJSONSize)
-    try FileManager.default.removeItem(atPath: outputPath)
+    try FileManager.default.removeItem(atPath: parallelOutputPath)
 
     return (importScore: importScore, outputScore: outputScore)
 }

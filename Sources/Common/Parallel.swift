@@ -4,7 +4,7 @@ let parallelInputPath = "\(dataPath)/ldjson_multi"
 /// Output directory for parallel benchmark files.
 public let parallelOutputPath = "\(dataPath)/ldjson_multi_output"
 
-func paddedId(_ id: Int32) -> String {
+public func paddedId(_ id: Int32) -> String {
     var num = String(id)
     while num.count < 3 {
         num = "0" + num
