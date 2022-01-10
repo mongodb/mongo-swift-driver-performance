@@ -2,11 +2,7 @@ import Foundation
 import NIO
 
 func paddedId(_ id: Int32) -> String {
-    var num = String(id)
-    while num.count < 3 {
-        num = "0" + num
-    }
-    return num
+    String(format: "%03d", id)
 }
 
 let parallelInputPath = dataPath.appendingPathComponent("ldjson_multi")
