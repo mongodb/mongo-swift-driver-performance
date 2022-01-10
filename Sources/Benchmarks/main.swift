@@ -1,2 +1,0 @@
-try benchmarkBSON()
-try benchmarkIO()

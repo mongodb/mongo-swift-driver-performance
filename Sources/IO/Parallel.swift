@@ -1,34 +1,9 @@
+import Common
 import Foundation
 import MongoSwift
 import NIO
 
-let inputPath = "\(dataPath)/ldjson_multi"
-let outputPath = "\(dataPath)/ldjson_multi_output"
-
-func paddedId(_ id: Int32) -> String {
-    var num = String(id)
-    while num.count < 3 {
-        num = "0" + num
-    }
-    return num
-}
-
-func getInputFilePath(forId id: Int32) -> String {
-    "\(inputPath)/ldjson\(paddedId(id)).txt"
-}
-
-func getOutputFilePath(forId id: Int32) -> String {
-    "\(outputPath)/ldjson\(paddedId(id)).txt"
-}
-
-// Length of each LDJSON file in bytes.
-let fileLength = 5_650_000
-// Total size of dataset in MB.
-let ldJSONSize = 565.0
-// Shared allocator to use throughout the benchmarks.
-let allocator = ByteBufferAllocator()
-
- /**
+/**
  * Imports all LDJSON files to the specified collection. This works by firing off 1 chained async call for each file
  * and combining their results into a single future. Each chained call works by:
  * 1. Reading in the entire contents of the file using `NonBlockingFileIO`.
@@ -66,7 +41,7 @@ func importJSONFile(
     ioHandler: NonBlockingFileIO,
     addFileId: Bool
 ) -> EventLoopFuture<InsertManyResult?> {
-    ioHandler.openFile(path: getInputFilePath(forId: id), eventLoop: eventLoop).flatMap { handle, region in
+    ioHandler.openFile(path: getParallelInputFilePath(forId: id).path, eventLoop: eventLoop).flatMap { handle, region in
         let readAndInsert: EventLoopFuture<InsertManyResult?> = ioHandler.read(
             fileRegion: region,
             allocator: allocator,
@@ -74,7 +49,7 @@ func importJSONFile(
         ).flatMap {
             var buffer = $0
             // these swiftlint disables are ok because we know the data is well-formed.
-            let docs = buffer.readBytes(length: fileLength)! // swiftlint:disable:this force_unwrapping
+            let docs = buffer.readBytes(length: parallelFileLength)! // swiftlint:disable:this force_unwrapping
                 .split(separator: 10) // 10 is byte code for "\n"
                 .map { try! BSONDocument(fromJSON: Data($0)) } // swiftlint:disable:this force_try
             if addFileId {
@@ -97,7 +72,7 @@ func importJSONFile(
     }
 }
 
- /**
+/**
  * Exports the specified collection to a set of LDJSON files. This works by firing off 1 chained async call for each
  * file and combining their results into a single future. Each chained call works by:
  * 1. Creating a cursor over documents in the collection with the specified file id.
@@ -130,11 +105,11 @@ func exportJSONFile(
     eventLoop: EventLoop,
     ioHandler: NonBlockingFileIO
 ) throws -> EventLoopFuture<Void> {
-    let handle = try NIOFileHandle(path: getOutputFilePath(forId: id), mode: .write)
+    let handle = try NIOFileHandle(path: getParallelOutputFilePath(forId: id).path, mode: .write)
     let write: EventLoopFuture<Void> = collection.find(["fileId": .int32(id)], options: FindOptions(batchSize: 5000))
         .flatMap { $0.toArray() }
         .flatMap { docs in
-            var buffer = allocator.buffer(capacity: docs[0].toExtendedJSONString().utf8.count * 5000)
+            var buffer = allocator.buffer(capacity: 1000 * 5000)
             docs.forEach { doc in
                 _ = buffer.writeString(doc.toExtendedJSONString() + "\n")
             }
@@ -150,7 +125,7 @@ func exportJSONFile(
 
 func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Double) {
     // Setup
-    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 4)
+    let elg = MultiThreadedEventLoopGroup(numberOfThreads: 50)
     let client = try MongoClient(using: elg)
     defer {
         try? client.syncClose()
@@ -182,21 +157,12 @@ func runMultiJSONBenchmarks() throws -> (importScore: Double, outputScore: Doubl
     _ = try importAllFiles(to: coll, eventLoopGroup: elg, ioHandler: fileIO, addFileIds: true).wait()
     _ = try coll.createIndex(["fileId": .int32(1)]).wait()
 
-    let exportResult = try measureTask(
-        before: {
-            try? FileManager.default.removeItem(atPath: outputPath)
-            try FileManager.default.createDirectory(atPath: outputPath, withIntermediateDirectories: false)
-            (0...99).forEach { id in
-                _ = FileManager.default.createFile(atPath: getOutputFilePath(forId: Int32(id)), contents: nil)
-            }
-        },
-        task: {
-            _ = try exportCollection(coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
-        }
-    )
+    let exportResult = try measureTask(before: parallelOutputSetup) {
+        _ = try exportCollection(coll, eventLoopGroup: elg, ioHandler: fileIO).wait()
+    }
 
     let outputScore = calculateAndPrintResults(name: "LDJSON Multi-file Export", time: exportResult, size: ldJSONSize)
-    try FileManager.default.removeItem(atPath: outputPath)
+    try parallelOutputCleanup()
 
     return (importScore: importScore, outputScore: outputScore)
 }

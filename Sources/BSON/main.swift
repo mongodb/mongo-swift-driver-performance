@@ -1,3 +1,4 @@
+import Common
 import Foundation
 import MongoSwift
 
@@ -13,7 +14,7 @@ enum SwiftBSON {
 
 /// Extension of Document to allow conversion to and from arrays.
 extension BSONDocument {
-    internal init(fromArray array: [DocElem]) {
+    init(fromArray array: [DocElem]) {
         self.init()
 
         for elem in array {
@@ -26,7 +27,7 @@ extension BSONDocument {
         }
     }
 
-    internal func toArray() -> [DocElem] {
+    func toArray() -> [DocElem] {
         map { kvp in
             if let subdoc = kvp.value.documentValue {
                 return DocElem(key: kvp.key, value: .document(subdoc.toArray()))
@@ -115,3 +116,5 @@ func benchmarkBSON() throws {
     }.reduce([], +)
     print("BSONBench score: \(average(allResults))")
 }
+
+try benchmarkBSON()
